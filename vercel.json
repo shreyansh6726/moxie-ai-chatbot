@@ -1,8 +1,5 @@
      {
        "version": 2,
-      //  "engines": {
-      //    "node": "20"
-      //  },
        "functions": {
          "api/**/*.js": {
            "runtime": "now-nodejs@1.0.0",
