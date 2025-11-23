@@ -1,12 +1,9 @@
 {
   "version": 2,
-  "engines": {
-    "node": "20.x"
-  },
   "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 10
-    }
+  "api/**/*.js": {
+    "runtime": "nodejs20.x",
+    "maxDuration": 10
+  }
   }
 }
