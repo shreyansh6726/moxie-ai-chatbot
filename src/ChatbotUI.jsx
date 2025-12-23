@@ -69,7 +69,7 @@ const ChatbotUI = () => {
               <Bot size={22} />
             </div>
             <div>
-              <div style={{ fontWeight: 'bold', color: '#1f2937' }}>Groq AI</div>
+              <div style={{ fontWeight: 'bold', color: '#1f2937' }}>Shreyansh AI</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span className="status-dot"></span>
                 <span style={{ fontSize: '12px', color: '#6b7280' }}>Online</span>
