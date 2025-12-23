@@ -1,13 +1,30 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
 import reportWebVitals from './reportWebVitals';
+import SplitText from "./SplitText";
+
+const handleAnimationComplete = () => {
+  console.log('All letters have animated!');
+};
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <SplitText
+      text="Hello, react"
+      className="text-2xl font-semibold text-center"
+      delay={100}
+      duration={1.7}
+      ease="elastic.out"
+      splitType="chars"
+      from={{ opacity: 0, y: 4 }}
+      to={{ opacity: 1, y: 0 }}
+      threshold={0.1}
+      rootMargin="-100px"
+      textAlign="center"
+      onLetterAnimationComplete={handleAnimationComplete}
+    />  
   </React.StrictMode>
 );
 
