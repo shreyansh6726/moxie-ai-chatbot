@@ -4,7 +4,7 @@ import './ChatbotUI.css';
 
 const ChatbotUI = () => {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your AI assistant powered by Groq. How can I help you today?", sender: 'bot' },
+    { id: 1, text: "Hello! I'm your AI assistant developed by Shreyansh. How can I help you today?", sender: 'bot' },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -119,7 +119,7 @@ const ChatbotUI = () => {
             </button>
           </div>
           <div style={{ textAlign: 'center', fontSize: '10px', color: '#9ca3af', marginTop: '8px' }}>
-            Powered by Groq Cloud
+            Developed by Shreyansh
           </div>
         </form>
 
