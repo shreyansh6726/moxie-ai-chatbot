@@ -4,7 +4,7 @@ import './ChatbotUI.css';
 
 const ChatbotUI = () => {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your AI assistant developed by Shreyansh. How can I help you today?", sender: 'bot' },
+    { id: 1, text: "Hello! I'm your Moxie AI assistant developed by Shreyansh. How can I help you today?", sender: 'bot' },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -69,7 +69,7 @@ const ChatbotUI = () => {
               <Bot size={22} />
             </div>
             <div>
-              <div style={{ fontWeight: 'bold', color: '#1f2937' }}>Shreyansh AI</div>
+              <div style={{ fontWeight: 'bold', color: '#1f2937' }}>Moxie AI</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span className="status-dot"></span>
                 <span style={{ fontSize: '12px', color: '#6b7280' }}>Online</span>
