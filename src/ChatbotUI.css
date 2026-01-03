@@ -468,24 +468,35 @@
 }
 
 /* Global Stop Speech Button */
+/* STOP SPEAKING BUTTON */
 .stop-speech-button {
-  background: #fee2e2;
+  background: transparent;
   border: none;
-  color: #ef4444;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  color: #ef4444; /* Keep the icon red */
   cursor: pointer;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: pulseRed 2s infinite;
-  transition: all 0.2s;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
-.dark-theme .stop-speech-button {
+/* Add a subtle pulse only when active so it doesn't look like a "spammy" alert */
+.stop-speech-button.active-glow {
+  animation: stopPulse 2s infinite;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes stopPulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.stop-speech-button:hover {
   background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  transform: scale(1.1);
 }
 
 .stop-speech-button:hover {

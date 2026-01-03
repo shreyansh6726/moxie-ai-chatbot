@@ -54,10 +54,7 @@ const ChatbotUI = () => {
   const voiceMenuRef = useRef(null);
 
   const getCleanName = (name) => {
-    return name
-      .replace(/Microsoft|Google|Apple|Desktop|Natural/g, '')
-      .replace(/-/g, '')
-      .trim();
+    return name.replace(/Microsoft|Google|Apple|Desktop|Natural/g, '').replace(/-/g, '').trim();
   };
 
   useEffect(() => {
@@ -94,24 +91,33 @@ const ChatbotUI = () => {
 
   const speak = (text, voiceIndex = selectedVoiceIndex) => {
     window.speechSynthesis.cancel();
+    setIsSpeaking(false); // Reset state before starting
+
     const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`_~]/g, ''));
     if (voices[voiceIndex]) utterance.voice = voices[voiceIndex];
+
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
     window.speechSynthesis.speak(utterance);
   };
 
-  // Test voice and switch
+  const stopSpeech = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
   const handleVoiceChange = (index) => {
     setSelectedVoiceIndex(index);
     setIsVoiceMenuOpen(false);
-    // Short delay to ensure state updates before testing
     setTimeout(() => speak("Voice selected", index), 100);
   };
 
   const clearChat = () => {
     if (window.confirm("Clear all messages?")) {
       setMessages([{ id: 1, text: "Hello! I'm your Moxie AI assistant. How can I help you today?", sender: 'bot' }]);
+      stopSpeech();
     }
   };
 
@@ -149,11 +155,7 @@ const ChatbotUI = () => {
                 {isVoiceMenuOpen && (
                   <div className="voice-menu">
                     {voices.map((v, i) => (
-                      <button 
-                        key={i} 
-                        className={`voice-option ${selectedVoiceIndex === i ? 'active' : ''}`}
-                        onClick={() => handleVoiceChange(i)}
-                      >
+                      <button key={i} className={`voice-option ${selectedVoiceIndex === i ? 'active' : ''}`} onClick={() => handleVoiceChange(i)}>
                         <span>{getCleanName(v.name)}</span>
                         <span className="voice-lang-tag">{v.lang.split('-')[0]}</span>
                       </button>
@@ -164,10 +166,13 @@ const ChatbotUI = () => {
             </div>
           </div>
           <div className="header-actions">
-            <button className="clear-chat-btn" onClick={clearChat} title="Clear Conversation">
-              <Trash2 size={18} />
-            </button>
-            {isSpeaking && <button className="stop-speech-button" onClick={() => window.speechSynthesis.cancel()}><VolumeX size={20} /></button>}
+            {/* STOP SPEAKING BUTTON: Only renders if isSpeaking is true */}
+            {isSpeaking && (
+              <button className="stop-speech-button active-glow" onClick={stopSpeech} title="Stop Speaking">
+                <VolumeX size={20} />
+              </button>
+            )}
+            <button className="clear-chat-btn" onClick={clearChat} title="Clear Conversation"><Trash2 size={18} /></button>
             <button className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>{isDarkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
           </div>
         </div>
