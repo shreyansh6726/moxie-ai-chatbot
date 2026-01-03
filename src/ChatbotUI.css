@@ -533,3 +533,28 @@
   70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
+
+.voice-selector-container {
+  margin-top: 2px;
+}
+
+.voice-select {
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  font-size: 11px;
+  max-width: 150px;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.dark-theme .voice-select {
+  color: #9ca3af;
+}
+
+.voice-select option {
+  background: var(--card-bg);
+  color: var(--text-main);
+}
