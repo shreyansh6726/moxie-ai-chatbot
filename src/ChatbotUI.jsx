@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Copy, Check, Moon, Sun, Paperclip, FileText, X } from 'lucide-react';
+import { Send, Bot, Copy, Check, Moon, Sun, Paperclip, FileText, X, Volume2, VolumeX } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './ChatbotUI.css';
 
+// Custom Component for Code Blocks with Syntax Highlighting & Copy Button
 const CodeBlock = ({ language, children, isDarkMode }) => {
   const [copied, setCopied] = useState(false);
+
   const handleCopy = () => {
     const codeText = String(children).replace(/\n$/, '');
     navigator.clipboard.writeText(codeText);
@@ -37,21 +39,45 @@ const CodeBlock = ({ language, children, isDarkMode }) => {
 
 const ChatbotUI = () => {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your Moxie AI assistant. How can I help you today?", sender: 'bot' },
+    { id: 1, text: "Hello! I'm your Moxie AI assistant developed by Shreyansh. How can I help you today?", sender: 'bot' },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [attachedFile, setAttachedFile] = useState(null); // New state for file attachment
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // --- Voice Functions ---
+  const speak = (text) => {
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[#*`_~]/g, ''); // Clean markdown for speech
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    const voices = window.speechSynthesis.getVoices();
+    utterance.voice = voices.find(v => v.lang.includes('en')) || voices[0];
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeech = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  // --- Auto Scroll ---
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
+  // --- File Handling ---
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -72,27 +98,27 @@ const ChatbotUI = () => {
     e.target.value = null;
   };
 
+  // --- Send Message ---
   const handleSend = async (e) => {
     e.preventDefault();
     if ((!input.trim() && !attachedFile) || isLoading) return;
 
-    // Create the message object
     const userMessage = { 
       id: Date.now(), 
       text: input, 
       sender: 'user',
-      file: attachedFile // Attach file data to the message
+      file: attachedFile 
     };
 
     setMessages((prev) => [...prev, userMessage]);
     
-    // Construct prompt for AI including file content if present
     const aiPrompt = attachedFile 
-      ? `[User attached a file: ${attachedFile.name}]\nFile Content:\n${attachedFile.content}\n\nUser Message: ${input}`
+      ? `[File: ${attachedFile.name}]\nContent:\n${attachedFile.content}\n\nUser Question: ${input}`
       : input;
 
+    const currentInput = input;
     setInput('');
-    setAttachedFile(null); // Clear attachment after sending
+    setAttachedFile(null);
     setIsLoading(true);
 
     try {
@@ -111,7 +137,7 @@ const ChatbotUI = () => {
       const data = await response.json();
       setMessages((prev) => [...prev, { id: Date.now() + 1, text: data.text, sender: 'bot' }]);
     } catch (error) {
-      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error.", sender: 'bot' }]);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error. Please try again.", sender: 'bot' }]);
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +146,8 @@ const ChatbotUI = () => {
   return (
     <div className={`chat-container-wrapper ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
       <div className="chat-card">
+        
+        {/* Header */}
         <div className="chat-header">
           <div className="bot-info">
             <div className="bot-avatar"><Bot size={22} /></div>
@@ -131,16 +159,24 @@ const ChatbotUI = () => {
               </div>
             </div>
           </div>
-          <button className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+          
+          <div className="header-actions">
+            {isSpeaking && (
+              <button className="stop-speech-button" onClick={stopSpeech} title="Stop Speaking">
+                <VolumeX size={20} />
+              </button>
+            )}
+            <button className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
 
+        {/* Messages */}
         <div ref={scrollRef} className="chat-messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
               <div className={`message-bubble ${msg.sender}`}>
-                {/* Render File Card if message has a file */}
                 {msg.file && (
                   <div className="file-attachment-card">
                     <FileText size={24} className="file-icon" />
@@ -170,6 +206,9 @@ const ChatbotUI = () => {
                     >
                       {msg.text}
                     </ReactMarkdown>
+                    <button className="speak-button" onClick={() => speak(msg.text)}>
+                      <Volume2 size={16} />
+                    </button>
                   </div>
                 ) : (
                   <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
@@ -180,8 +219,8 @@ const ChatbotUI = () => {
           {isLoading && <div className="message-row bot"><div className="typing-dot"></div></div>}
         </div>
 
+        {/* Input Form */}
         <form onSubmit={handleSend} className="chat-input-form">
-          {/* File Preview Area */}
           {attachedFile && (
             <div className="file-preview-bar">
               <div className="preview-card">
@@ -208,7 +247,9 @@ const ChatbotUI = () => {
               <Send size={18} />
             </button>
           </div>
+          <div className="developer-tag">Developed by Shreyansh</div>
         </form>
+
       </div>
     </div>
   );
