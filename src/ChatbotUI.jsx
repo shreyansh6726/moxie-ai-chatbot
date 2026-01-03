@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Copy, Check } from 'lucide-react';
+import { Send, Bot, Copy, Check, Moon, Sun } from 'lucide-react'; // Added Moon/Sun icons
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; // Modern dark theme
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './ChatbotUI.css';
 
-// Updated CodeBlock with Syntax Highlighting
-const CodeBlock = ({ language, children }) => {
+const CodeBlock = ({ language, children, isDarkMode }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -27,7 +26,7 @@ const CodeBlock = ({ language, children }) => {
       </div>
       <SyntaxHighlighter
         language={language}
-        style={oneDark}
+        style={isDarkMode ? oneDark : oneLight}
         customStyle={{ margin: 0, padding: '15px', fontSize: '13px' }}
       >
         {children}
@@ -42,6 +41,7 @@ const ChatbotUI = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false); // New Dark Mode State
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -83,19 +83,24 @@ const ChatbotUI = () => {
   };
 
   return (
-    <div className="chat-container-wrapper">
+    // Apply the theme class here
+    <div className={`chat-container-wrapper ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
       <div className="chat-card">
         <div className="chat-header">
           <div className="bot-info">
             <div className="bot-avatar"><Bot size={22} /></div>
             <div>
-              <div style={{ fontWeight: 'bold', color: '#1f2937' }}>Moxie AI</div>
+              <div className="header-title">Moxie AI</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span className="status-dot"></span>
-                <span style={{ fontSize: '12px', color: '#6b7280' }}>Online</span>
+                <span className="status-text">Online</span>
               </div>
             </div>
           </div>
+          {/* Theme Toggle Button */}
+          <button className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
         </div>
 
         <div ref={scrollRef} className="chat-messages">
@@ -109,7 +114,7 @@ const ChatbotUI = () => {
                         code({node, inline, className, children, ...props}) {
                           const match = /language-(\w+)/.exec(className || '');
                           return !inline ? (
-                            <CodeBlock language={match ? match[1] : ''}>
+                            <CodeBlock language={match ? match[1] : ''} isDarkMode={isDarkMode}>
                               {children}
                             </CodeBlock>
                           ) : (
