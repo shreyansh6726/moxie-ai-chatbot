@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'; // Modern dark theme
 import './ChatbotUI.css';
 
-// Custom Component for Code Blocks with Copy Button
-const CodeBlock = ({ children }) => {
+// Updated CodeBlock with Syntax Highlighting
+const CodeBlock = ({ language, children }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -16,13 +18,20 @@ const CodeBlock = ({ children }) => {
 
   return (
     <div className="code-container">
-      <button onClick={handleCopy} className="copy-button">
-        {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
-        <span>{copied ? 'Copied!' : 'Copy'}</span>
-      </button>
-      <pre>
-        <code>{children}</code>
-      </pre>
+      <div className="code-header">
+        <span className="code-language">{language || 'code'}</span>
+        <button onClick={handleCopy} className="copy-button">
+          {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+          <span>{copied ? 'Copied!' : 'Copy'}</span>
+        </button>
+      </div>
+      <SyntaxHighlighter
+        language={language}
+        style={oneDark}
+        customStyle={{ margin: 0, padding: '15px', fontSize: '13px' }}
+      >
+        {children}
+      </SyntaxHighlighter>
     </div>
   );
 };
@@ -64,20 +73,10 @@ const ChatbotUI = () => {
         body: JSON.stringify({ messages: history }),
       });
 
-      if (!response.ok) throw new Error('Failed to fetch');
-
       const data = await response.json();
-
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, text: data.text, sender: 'bot' },
-      ]);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, text: data.text, sender: 'bot' }]);
     } catch (error) {
-      console.error("Chat Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, text: "I'm having trouble connecting. Please try again.", sender: 'bot' },
-      ]);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error.", sender: 'bot' }]);
     } finally {
       setIsLoading(false);
     }
@@ -107,10 +106,12 @@ const ChatbotUI = () => {
                   <div className="markdown-content">
                     <ReactMarkdown 
                       components={{
-                        // This replaces standard <pre> tags with our custom CodeBlock
                         code({node, inline, className, children, ...props}) {
+                          const match = /language-(\w+)/.exec(className || '');
                           return !inline ? (
-                            <CodeBlock>{children}</CodeBlock>
+                            <CodeBlock language={match ? match[1] : ''}>
+                              {children}
+                            </CodeBlock>
                           ) : (
                             <code className={className} {...props}>{children}</code>
                           )
@@ -126,16 +127,7 @@ const ChatbotUI = () => {
               </div>
             </div>
           ))}
-          
-          {isLoading && (
-            <div className="message-row bot">
-              <div className="message-bubble bot" style={{ display: 'flex', gap: '4px', alignItems: 'center', opacity: 0.7 }}>
-                <span className="typing-dot"></span>
-                <span className="typing-dot" style={{ animationDelay: '0.2s' }}></span>
-                <span className="typing-dot" style={{ animationDelay: '0.4s' }}></span>
-              </div>
-            </div>
-          )}
+          {isLoading && <div className="message-row bot"><div className="typing-dot"></div></div>}
         </div>
 
         <form onSubmit={handleSend} className="chat-input-form">
@@ -144,16 +136,12 @@ const ChatbotUI = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isLoading ? "AI is thinking..." : "Type your message..."}
+              placeholder="Type your message..."
               disabled={isLoading}
-              style={{ paddingLeft: '16px' }}
             />
             <button type="submit" className="send-button" disabled={isLoading || !input.trim()}>
               <Send size={18} />
             </button>
-          </div>
-          <div style={{ textAlign: 'center', fontSize: '10px', color: '#9ca3af', marginTop: '8px' }}>
-            Developed by Shreyansh
           </div>
         </form>
       </div>
