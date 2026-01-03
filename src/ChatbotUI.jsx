@@ -6,16 +6,10 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './ChatbotUI.css';
 
-// --- PDF.js Worker Configuration ---
-import * as pdfjsLib from 'pdfjs-dist';
-// This import ensures the worker is bundled correctly by your build tool (Vite/Webpack)
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-
 // Custom Component for Code Blocks with Syntax Highlighting & Copy Button
 const CodeBlock = ({ language, children, isDarkMode }) => {
   const [copied, setCopied] = useState(false);
+
   const handleCopy = () => {
     const codeText = String(children).replace(/\n$/, '');
     navigator.clipboard.writeText(codeText);
@@ -56,15 +50,16 @@ const ChatbotUI = () => {
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // --- Voice Logic ---
+  // --- Voice Functions ---
   const speak = (text) => {
     window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[#*`_~]/g, '');
+    const cleanText = text.replace(/[#*`_~]/g, ''); // Clean markdown for speech
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
-    
+
     const voices = window.speechSynthesis.getVoices();
     utterance.voice = voices.find(v => v.lang.includes('en')) || voices[0];
     window.speechSynthesis.speak(utterance);
@@ -82,49 +77,24 @@ const ChatbotUI = () => {
     }
   }, [messages, isLoading]);
 
-  // --- PDF & TXT Extraction Logic ---
-  const handleFileSelect = async (e) => {
+  // --- File Handling ---
+  const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    const fileInfo = {
-      name: file.name,
-      size: (file.size / 1024).toFixed(1) + " KB",
-      type: file.type
-    };
-
-    if (file.type === "text/plain") {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setAttachedFile({ ...fileInfo, content: event.target.result });
-      };
-      reader.readAsText(file);
-    } 
-    else if (file.type === "application/pdf") {
-      setIsLoading(true);
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = "";
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(" ");
-          fullText += pageText + "\n";
-        }
-
-        setAttachedFile({ ...fileInfo, content: fullText });
-      } catch (error) {
-        console.error("PDF Error:", error);
-        alert("Error parsing PDF. Please make sure it's not password protected.");
-      } finally {
-        setIsLoading(false);
-      }
-    } 
-    else {
-      alert("Only .txt and .pdf files are supported.");
+    if (file.type !== "text/plain") {
+      alert("Please upload a .txt file.");
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setAttachedFile({
+        name: file.name,
+        content: event.target.result,
+        size: (file.size / 1024).toFixed(1) + " KB"
+      });
+    };
+    reader.readAsText(file);
     e.target.value = null;
   };
 
@@ -142,11 +112,11 @@ const ChatbotUI = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     
-    // Construct instructions for the AI model to process the attachment
     const aiPrompt = attachedFile 
-      ? `[File Attached: ${attachedFile.name}]\n\nContent:\n${attachedFile.content}\n\nUser Question: ${input || "Please analyze this file."}`
+      ? `[File: ${attachedFile.name}]\nContent:\n${attachedFile.content}\n\nUser Question: ${input}`
       : input;
 
+    const currentInput = input;
     setInput('');
     setAttachedFile(null);
     setIsLoading(true);
@@ -177,7 +147,7 @@ const ChatbotUI = () => {
     <div className={`chat-container-wrapper ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
       <div className="chat-card">
         
-        {/* Header Section */}
+        {/* Header */}
         <div className="chat-header">
           <div className="bot-info">
             <div className="bot-avatar"><Bot size={22} /></div>
@@ -202,12 +172,11 @@ const ChatbotUI = () => {
           </div>
         </div>
 
-        {/* Chat Messages Area */}
+        {/* Messages */}
         <div ref={scrollRef} className="chat-messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
               <div className={`message-bubble ${msg.sender}`}>
-                {/* Render File Attachment Card */}
                 {msg.file && (
                   <div className="file-attachment-card">
                     <FileText size={24} className="file-icon" />
@@ -237,7 +206,7 @@ const ChatbotUI = () => {
                     >
                       {msg.text}
                     </ReactMarkdown>
-                    <button className="speak-button" onClick={() => speak(msg.text)} title="Listen">
+                    <button className="speak-button" onClick={() => speak(msg.text)}>
                       <Volume2 size={16} />
                     </button>
                   </div>
@@ -250,7 +219,7 @@ const ChatbotUI = () => {
           {isLoading && <div className="message-row bot"><div className="typing-dot"></div></div>}
         </div>
 
-        {/* Input & Upload Section */}
+        {/* Input Form */}
         <form onSubmit={handleSend} className="chat-input-form">
           {attachedFile && (
             <div className="file-preview-bar">
@@ -263,37 +232,23 @@ const ChatbotUI = () => {
           )}
 
           <div className="input-wrapper">
-            <input 
-              type="file" 
-              accept=".txt,.pdf" 
-              ref={fileInputRef} 
-              style={{ display: 'none' }} 
-              onChange={handleFileSelect} 
-            />
-            <button 
-              type="button" 
-              className="attach-button" 
-              onClick={() => fileInputRef.current.click()} 
-              disabled={isLoading}
-              title="Attach File"
-            >
+            <input type="file" accept=".txt" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileSelect} />
+            <button type="button" className="attach-button" onClick={() => fileInputRef.current.click()} disabled={isLoading}>
               <Paperclip size={20} />
             </button>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isLoading ? "Processing..." : "Type a message..."}
+              placeholder="Type a message..."
               disabled={isLoading}
             />
             <button type="submit" className="send-button" disabled={isLoading || (!input.trim() && !attachedFile)}>
               <Send size={18} />
             </button>
           </div>
-          <div style={{ textAlign: 'center', fontSize: '10px', color: '#9ca3af', marginTop: '8px' }}>
-            Developed by Shreyansh
-          </div>
         </form>
+
       </div>
     </div>
   );
