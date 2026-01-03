@@ -1,7 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot } from 'lucide-react';
-import ReactMarkdown from 'react-markdown'; // Import the markdown library
+import { Send, Bot, Copy, Check } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import './ChatbotUI.css';
+
+// Custom Component for Code Blocks with Copy Button
+const CodeBlock = ({ children }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const codeText = String(children).replace(/\n$/, '');
+    navigator.clipboard.writeText(codeText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="code-container">
+      <button onClick={handleCopy} className="copy-button">
+        {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+        <span>{copied ? 'Copied!' : 'Copy'}</span>
+      </button>
+      <pre>
+        <code>{children}</code>
+      </pre>
+    </div>
+  );
+};
 
 const ChatbotUI = () => {
   const [messages, setMessages] = useState([
@@ -62,13 +86,9 @@ const ChatbotUI = () => {
   return (
     <div className="chat-container-wrapper">
       <div className="chat-card">
-        
-        {/* Simplified Header */}
         <div className="chat-header">
           <div className="bot-info">
-            <div className="bot-avatar">
-              <Bot size={22} />
-            </div>
+            <div className="bot-avatar"><Bot size={22} /></div>
             <div>
               <div style={{ fontWeight: 'bold', color: '#1f2937' }}>Moxie AI</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -79,17 +99,26 @@ const ChatbotUI = () => {
           </div>
         </div>
 
-        {/* Chat Area */}
         <div ref={scrollRef} className="chat-messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
               <div className={`message-bubble ${msg.sender}`}>
-                {/* Use ReactMarkdown for the bot's messages.
-                  We keep the user's message as text for security/simplicity.
-                */}
                 {msg.sender === 'bot' ? (
                   <div className="markdown-content">
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                    <ReactMarkdown 
+                      components={{
+                        // This replaces standard <pre> tags with our custom CodeBlock
+                        code({node, inline, className, children, ...props}) {
+                          return !inline ? (
+                            <CodeBlock>{children}</CodeBlock>
+                          ) : (
+                            <code className={className} {...props}>{children}</code>
+                          )
+                        }
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
                   </div>
                 ) : (
                   msg.text
@@ -109,7 +138,6 @@ const ChatbotUI = () => {
           )}
         </div>
 
-        {/* Input Area */}
         <form onSubmit={handleSend} className="chat-input-form">
           <div className="input-wrapper">
             <input
@@ -120,11 +148,7 @@ const ChatbotUI = () => {
               disabled={isLoading}
               style={{ paddingLeft: '16px' }}
             />
-            <button 
-              type="submit" 
-              className="send-button" 
-              disabled={isLoading || !input.trim()}
-            >
+            <button type="submit" className="send-button" disabled={isLoading || !input.trim()}>
               <Send size={18} />
             </button>
           </div>
@@ -132,7 +156,6 @@ const ChatbotUI = () => {
             Developed by Shreyansh
           </div>
         </form>
-
       </div>
     </div>
   );
