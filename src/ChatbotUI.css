@@ -534,27 +534,93 @@
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-.voice-selector-container {
+/* Custom Voice Selector Container */
+.voice-selector-wrap {
+  position: relative;
   margin-top: 2px;
 }
 
-.voice-select {
+.voice-trigger {
   background: transparent;
   border: none;
   color: var(--text-sub);
   font-size: 11px;
-  max-width: 150px;
   cursor: pointer;
-  outline: none;
-  padding: 0;
-  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  transition: color 0.2s;
 }
 
-.dark-theme .voice-select {
-  color: #9ca3af;
-}
-
-.voice-select option {
-  background: var(--card-bg);
+.voice-trigger:hover {
   color: var(--text-main);
+}
+
+/* The Minimalist Menu */
+.voice-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 200px;
+  max-height: 250px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: slideDown 0.2s ease-out;
+}
+
+/* Individual Voice Option */
+.voice-option {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.voice-option:hover {
+  background: rgba(79, 70, 229, 0.1); /* Subtle indigo tint */
+}
+
+.voice-option.active {
+  background: rgba(79, 70, 229, 0.15);
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.voice-lang-tag {
+  font-size: 10px;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+/* Animation */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar styling for the menu */
+.voice-menu::-webkit-scrollbar {
+  width: 4px;
+}
+.voice-menu::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
 }
