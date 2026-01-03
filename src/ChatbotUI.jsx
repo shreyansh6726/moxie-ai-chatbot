@@ -4,11 +4,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import * as pdfjsLib from 'pdfjs-dist'; // Import PDF.js
 import './ChatbotUI.css';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
-// Set up the worker for PDF.js (required for it to function)
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const CodeBlock = ({ language, children, isDarkMode }) => {
   const [copied, setCopied] = useState(false);
@@ -264,7 +264,6 @@ const ChatbotUI = () => {
               <Send size={18} />
             </button>
           </div>
-          <div className="developer-tag">Developed by Shreyansh</div>
         </form>
       </div>
     </div>
