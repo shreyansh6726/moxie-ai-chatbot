@@ -415,3 +415,44 @@
 .message-content ul, .message-content ol {
   margin-left: 20px;
 }
+
+/* 1. Ensure the bubble itself handles overflow */
+.message-bubble.bot {
+  max-width: 85%; /* Adjust based on your preference */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: hidden; /* Prevents children from sticking out */
+}
+
+/* 2. Target the Markdown container specifically */
+.markdown-content {
+  width: 100%;
+  overflow-x: auto; /* Adds a horizontal scrollbar to the bubble if content is too wide */
+}
+
+/* 3. Style code blocks (the ones created by ``` ) */
+.markdown-content pre {
+  background-color: #f4f4f9; /* Light grey background for code */
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto; /* Enables scrolling for long lines of code */
+  white-space: pre; /* Keeps code formatting but allows scrolling */
+  margin: 10px 0;
+  border: 1px solid #e5e7eb;
+}
+
+/* 4. Style inline code (the ones created by ` ) */
+.markdown-content code {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* 5. Ensure images or tables don't overflow */
+.markdown-content img, 
+.markdown-content table {
+  max-width: 100%;
+  display: block;
+}
