@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown'; // Import the markdown library
 import './ChatbotUI.css';
 
 const ChatbotUI = () => {
@@ -83,7 +84,16 @@ const ChatbotUI = () => {
           {messages.map((msg) => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
               <div className={`message-bubble ${msg.sender}`}>
-                {msg.text}
+                {/* Use ReactMarkdown for the bot's messages.
+                  We keep the user's message as text for security/simplicity.
+                */}
+                {msg.sender === 'bot' ? (
+                  <div className="markdown-content">
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                  </div>
+                ) : (
+                  msg.text
+                )}
               </div>
             </div>
           ))}

@@ -15,7 +15,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages } = req.body;
+    let { messages } = req.body;
+
+    // Check if there is already a system message; if not, add one to enforce Markdown
+    const hasSystemMessage = messages.some(msg => msg.role === 'system');
+    
+    if (!hasSystemMessage) {
+      messages = [
+        { 
+          role: "system", 
+          content: "You are a helpful assistant. You must always respond using Markdown formatting. Use bolding for emphasis, bullet points for lists, and code blocks for any code snippets to ensure high readability." 
+        },
+        ...messages
+      ];
+    }
 
     const completion = await groq.chat.completions.create({
       messages: messages,
