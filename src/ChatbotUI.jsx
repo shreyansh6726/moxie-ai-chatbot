@@ -5,11 +5,15 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './ChatbotUI.css';
+
+// --- PDF.js Worker Configuration ---
 import * as pdfjsLib from 'pdfjs-dist';
+// This import ensures the worker is bundled correctly by your build tool (Vite/Webpack)
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
+// Custom Component for Code Blocks with Syntax Highlighting & Copy Button
 const CodeBlock = ({ language, children, isDarkMode }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
@@ -52,6 +56,7 @@ const ChatbotUI = () => {
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // --- Voice Logic ---
   const speak = (text) => {
     window.speechSynthesis.cancel();
     const cleanText = text.replace(/[#*`_~]/g, '');
@@ -59,6 +64,7 @@ const ChatbotUI = () => {
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
+    
     const voices = window.speechSynthesis.getVoices();
     utterance.voice = voices.find(v => v.lang.includes('en')) || voices[0];
     window.speechSynthesis.speak(utterance);
@@ -69,6 +75,7 @@ const ChatbotUI = () => {
     setIsSpeaking(false);
   };
 
+  // --- Auto Scroll ---
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -109,7 +116,8 @@ const ChatbotUI = () => {
 
         setAttachedFile({ ...fileInfo, content: fullText });
       } catch (error) {
-        alert("Error parsing PDF: " + error.message);
+        console.error("PDF Error:", error);
+        alert("Error parsing PDF. Please make sure it's not password protected.");
       } finally {
         setIsLoading(false);
       }
@@ -120,6 +128,7 @@ const ChatbotUI = () => {
     e.target.value = null;
   };
 
+  // --- Send Message ---
   const handleSend = async (e) => {
     e.preventDefault();
     if ((!input.trim() && !attachedFile) || isLoading) return;
@@ -133,8 +142,9 @@ const ChatbotUI = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     
+    // Construct instructions for the AI model to process the attachment
     const aiPrompt = attachedFile 
-      ? `[User attached a ${attachedFile.type === 'application/pdf' ? 'PDF' : 'TXT'} file: ${attachedFile.name}]\nContent:\n${attachedFile.content}\n\nUser Question: ${input}`
+      ? `[File Attached: ${attachedFile.name}]\n\nContent:\n${attachedFile.content}\n\nUser Question: ${input || "Please analyze this file."}`
       : input;
 
     setInput('');
@@ -157,7 +167,7 @@ const ChatbotUI = () => {
       const data = await response.json();
       setMessages((prev) => [...prev, { id: Date.now() + 1, text: data.text, sender: 'bot' }]);
     } catch (error) {
-      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error.", sender: 'bot' }]);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error. Please try again.", sender: 'bot' }]);
     } finally {
       setIsLoading(false);
     }
@@ -166,6 +176,8 @@ const ChatbotUI = () => {
   return (
     <div className={`chat-container-wrapper ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
       <div className="chat-card">
+        
+        {/* Header Section */}
         <div className="chat-header">
           <div className="bot-info">
             <div className="bot-avatar"><Bot size={22} /></div>
@@ -190,10 +202,12 @@ const ChatbotUI = () => {
           </div>
         </div>
 
+        {/* Chat Messages Area */}
         <div ref={scrollRef} className="chat-messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
               <div className={`message-bubble ${msg.sender}`}>
+                {/* Render File Attachment Card */}
                 {msg.file && (
                   <div className="file-attachment-card">
                     <FileText size={24} className="file-icon" />
@@ -223,7 +237,7 @@ const ChatbotUI = () => {
                     >
                       {msg.text}
                     </ReactMarkdown>
-                    <button className="speak-button" onClick={() => speak(msg.text)}>
+                    <button className="speak-button" onClick={() => speak(msg.text)} title="Listen">
                       <Volume2 size={16} />
                     </button>
                   </div>
@@ -236,6 +250,7 @@ const ChatbotUI = () => {
           {isLoading && <div className="message-row bot"><div className="typing-dot"></div></div>}
         </div>
 
+        {/* Input & Upload Section */}
         <form onSubmit={handleSend} className="chat-input-form">
           {attachedFile && (
             <div className="file-preview-bar">
@@ -248,21 +263,35 @@ const ChatbotUI = () => {
           )}
 
           <div className="input-wrapper">
-            {/* Updated accept attribute to include .pdf */}
-            <input type="file" accept=".txt,.pdf" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileSelect} />
-            <button type="button" className="attach-button" onClick={() => fileInputRef.current.click()} disabled={isLoading}>
+            <input 
+              type="file" 
+              accept=".txt,.pdf" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              onChange={handleFileSelect} 
+            />
+            <button 
+              type="button" 
+              className="attach-button" 
+              onClick={() => fileInputRef.current.click()} 
+              disabled={isLoading}
+              title="Attach File"
+            >
               <Paperclip size={20} />
             </button>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={isLoading ? "Processing file..." : "Type a message..."}
+              placeholder={isLoading ? "Processing..." : "Type a message..."}
               disabled={isLoading}
             />
             <button type="submit" className="send-button" disabled={isLoading || (!input.trim() && !attachedFile)}>
               <Send size={18} />
             </button>
+          </div>
+          <div style={{ textAlign: 'center', fontSize: '10px', color: '#9ca3af', marginTop: '8px' }}>
+            Developed by Shreyansh
           </div>
         </form>
       </div>
