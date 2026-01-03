@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Copy, Check, Moon, Sun, Paperclip, FileText, X, Volume2, VolumeX } from 'lucide-react';
+import { Send, Bot, Copy, Check, Moon, Sun, Paperclip, FileText, X, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -39,21 +39,47 @@ const CodeBlock = ({ language, children, isDarkMode }) => {
 
 const ChatbotUI = () => {
   const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your Moxie AI assistant developed by Shreyansh. How can I help you today?", sender: 'bot' },
+    { id: 1, text: "Hello! I'm your Moxie AI assistant. How can I help you today?", sender: 'bot' },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [attachedFile, setAttachedFile] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // --- Voice Functions ---
+  // --- Speech to Text (Voice Input) ---
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support speech recognition. Please try Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+
+    recognition.start();
+  };
+
+  // --- Voice Functions (Output) ---
   const speak = (text) => {
     window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[#*`_~]/g, ''); // Clean markdown for speech
+    const cleanText = text.replace(/[#*`_~]/g, ''); 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
     utterance.onstart = () => setIsSpeaking(true);
@@ -116,7 +142,6 @@ const ChatbotUI = () => {
       ? `[File: ${attachedFile.name}]\nContent:\n${attachedFile.content}\n\nUser Question: ${input}`
       : input;
 
-    const currentInput = input;
     setInput('');
     setAttachedFile(null);
     setIsLoading(true);
@@ -236,11 +261,21 @@ const ChatbotUI = () => {
             <button type="button" className="attach-button" onClick={() => fileInputRef.current.click()} disabled={isLoading}>
               <Paperclip size={20} />
             </button>
+            
+            <button 
+              type="button" 
+              className={`mic-button ${isListening ? 'listening' : ''}`} 
+              onClick={startListening} 
+              disabled={isLoading}
+            >
+              {isListening ? <MicOff size={20} color="#ef4444" /> : <Mic size={20} />}
+            </button>
+
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={isListening ? "Listening..." : "Type a message..."}
               disabled={isLoading}
             />
             <button type="submit" className="send-button" disabled={isLoading || (!input.trim() && !attachedFile)}>
