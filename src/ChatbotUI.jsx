@@ -53,7 +53,6 @@ const ChatbotUI = () => {
   const fileInputRef = useRef(null);
   const voiceMenuRef = useRef(null);
 
-  // Helper function to clean voice names (Removes "Microsoft", "Google", etc.)
   const getCleanName = (name) => {
     return name
       .replace(/Microsoft|Google|Apple|Desktop|Natural/g, '')
@@ -93,13 +92,21 @@ const ChatbotUI = () => {
     recognition.start();
   };
 
-  const speak = (text) => {
+  const speak = (text, voiceIndex = selectedVoiceIndex) => {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text.replace(/[#*`_~]/g, ''));
-    if (voices[selectedVoiceIndex]) utterance.voice = voices[selectedVoiceIndex];
+    if (voices[voiceIndex]) utterance.voice = voices[voiceIndex];
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
+  };
+
+  // Test voice and switch
+  const handleVoiceChange = (index) => {
+    setSelectedVoiceIndex(index);
+    setIsVoiceMenuOpen(false);
+    // Short delay to ensure state updates before testing
+    setTimeout(() => speak("Voice selected", index), 100);
   };
 
   const clearChat = () => {
@@ -145,7 +152,7 @@ const ChatbotUI = () => {
                       <button 
                         key={i} 
                         className={`voice-option ${selectedVoiceIndex === i ? 'active' : ''}`}
-                        onClick={() => { setSelectedVoiceIndex(i); setIsVoiceMenuOpen(false); }}
+                        onClick={() => handleVoiceChange(i)}
                       >
                         <span>{getCleanName(v.name)}</span>
                         <span className="voice-lang-tag">{v.lang.split('-')[0]}</span>
@@ -157,7 +164,9 @@ const ChatbotUI = () => {
             </div>
           </div>
           <div className="header-actions">
-            <button className="header-icon-btn" onClick={clearChat} title="Clear Chat"><Trash2 size={18} /></button>
+            <button className="clear-chat-btn" onClick={clearChat} title="Clear Conversation">
+              <Trash2 size={18} />
+            </button>
             {isSpeaking && <button className="stop-speech-button" onClick={() => window.speechSynthesis.cancel()}><VolumeX size={20} /></button>}
             <button className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>{isDarkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
           </div>
