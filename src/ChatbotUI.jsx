@@ -47,13 +47,20 @@ const ChatbotUI = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voices, setVoices] = useState([]);
-  const [isVoiceMenuOpen, setIsVoiceMenuOpen] = useState(false); // Controls the custom menu
+  const [isVoiceMenuOpen, setIsVoiceMenuOpen] = useState(false);
 
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
   const voiceMenuRef = useRef(null);
 
-  // Close voice menu when clicking outside
+  // Helper function to clean voice names (Removes "Microsoft", "Google", etc.)
+  const getCleanName = (name) => {
+    return name
+      .replace(/Microsoft|Google|Apple|Desktop|Natural/g, '')
+      .replace(/-/g, '')
+      .trim();
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (voiceMenuRef.current && !voiceMenuRef.current.contains(event.target)) {
@@ -127,14 +134,11 @@ const ChatbotUI = () => {
             <div className="bot-avatar"><Bot size={22} /></div>
             <div>
               <div className="header-title">Moxie AI</div>
-              
-              {/* Minimalist Custom Voice Selector */}
               <div className="voice-selector-wrap" ref={voiceMenuRef}>
                 <button className="voice-trigger" onClick={() => setIsVoiceMenuOpen(!isVoiceMenuOpen)}>
-                  {voices[selectedVoiceIndex]?.name.split(' ')[0] || "Select Voice"}
+                  {voices[selectedVoiceIndex] ? getCleanName(voices[selectedVoiceIndex].name) : "Select Voice"}
                   <ChevronDown size={12} />
                 </button>
-                
                 {isVoiceMenuOpen && (
                   <div className="voice-menu">
                     {voices.map((v, i) => (
@@ -143,7 +147,7 @@ const ChatbotUI = () => {
                         className={`voice-option ${selectedVoiceIndex === i ? 'active' : ''}`}
                         onClick={() => { setSelectedVoiceIndex(i); setIsVoiceMenuOpen(false); }}
                       >
-                        <span>{v.name.split(' ')[0]}</span>
+                        <span>{getCleanName(v.name)}</span>
                         <span className="voice-lang-tag">{v.lang.split('-')[0]}</span>
                       </button>
                     ))}
