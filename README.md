@@ -70,6 +70,3 @@ Click Deploy.
 This project is open-source and available under the MIT License.
 
 ---
-
-### Next Step
-Would you like me to provide the code for the **`chat.js`** file to handle the Groq API integration?
