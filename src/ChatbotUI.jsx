@@ -247,7 +247,6 @@ const ChatbotUI = () => {
               <Send size={18} />
             </button>
           </div>
-          <div className="developer-tag">Developed by Shreyansh</div>
         </form>
 
       </div>
