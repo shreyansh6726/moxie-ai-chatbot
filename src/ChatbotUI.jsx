@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, Copy, Check, Moon, Sun } from 'lucide-react'; // Added Moon/Sun icons
+import { Send, Bot, Copy, Check, Moon, Sun } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './ChatbotUI.css';
 
+// Custom Component for Code Blocks with Syntax Highlighting & Copy Button
 const CodeBlock = ({ language, children, isDarkMode }) => {
   const [copied, setCopied] = useState(false);
 
@@ -27,7 +29,7 @@ const CodeBlock = ({ language, children, isDarkMode }) => {
       <SyntaxHighlighter
         language={language}
         style={isDarkMode ? oneDark : oneLight}
-        customStyle={{ margin: 0, padding: '15px', fontSize: '13px' }}
+        customStyle={{ margin: 0, padding: '15px', fontSize: '13px', background: 'transparent' }}
       >
         {children}
       </SyntaxHighlighter>
@@ -41,9 +43,10 @@ const ChatbotUI = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false); // New Dark Mode State
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const scrollRef = useRef(null);
 
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -73,22 +76,35 @@ const ChatbotUI = () => {
         body: JSON.stringify({ messages: history }),
       });
 
+      if (!response.ok) throw new Error('Failed to fetch');
+
       const data = await response.json();
-      setMessages((prev) => [...prev, { id: Date.now() + 1, text: data.text, sender: 'bot' }]);
+
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now() + 1, text: data.text, sender: 'bot' },
+      ]);
     } catch (error) {
-      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error.", sender: 'bot' }]);
+      console.error("Chat Error:", error);
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now() + 1, text: "I'm having trouble connecting. Please try again.", sender: 'bot' },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    // Apply the theme class here
     <div className={`chat-container-wrapper ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
       <div className="chat-card">
+        
+        {/* Header Section */}
         <div className="chat-header">
           <div className="bot-info">
-            <div className="bot-avatar"><Bot size={22} /></div>
+            <div className="bot-avatar">
+              <Bot size={22} />
+            </div>
             <div>
               <div className="header-title">Moxie AI</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -97,12 +113,12 @@ const ChatbotUI = () => {
               </div>
             </div>
           </div>
-          {/* Theme Toggle Button */}
           <button className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </div>
 
+        {/* Chat Area */}
         <div ref={scrollRef} className="chat-messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
@@ -110,15 +126,21 @@ const ChatbotUI = () => {
                 {msg.sender === 'bot' ? (
                   <div className="markdown-content">
                     <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]} 
                       components={{
                         code({node, inline, className, children, ...props}) {
                           const match = /language-(\w+)/.exec(className || '');
                           return !inline ? (
-                            <CodeBlock language={match ? match[1] : ''} isDarkMode={isDarkMode}>
+                            <CodeBlock 
+                              language={match ? match[1] : ''} 
+                              isDarkMode={isDarkMode}
+                            >
                               {children}
                             </CodeBlock>
                           ) : (
-                            <code className={className} {...props}>{children}</code>
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
                           )
                         }
                       }}
@@ -132,23 +154,41 @@ const ChatbotUI = () => {
               </div>
             </div>
           ))}
-          {isLoading && <div className="message-row bot"><div className="typing-dot"></div></div>}
+          
+          {isLoading && (
+            <div className="message-row bot">
+              <div className="message-bubble bot" style={{ display: 'flex', gap: '4px', alignItems: 'center', opacity: 0.7 }}>
+                <span className="typing-dot"></span>
+                <span className="typing-dot" style={{ animationDelay: '0.2s' }}></span>
+                <span className="typing-dot" style={{ animationDelay: '0.4s' }}></span>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Input Area */}
         <form onSubmit={handleSend} className="chat-input-form">
           <div className="input-wrapper">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={isLoading ? "AI is thinking..." : "Type your message..."}
               disabled={isLoading}
             />
-            <button type="submit" className="send-button" disabled={isLoading || !input.trim()}>
+            <button 
+              type="submit" 
+              className="send-button" 
+              disabled={isLoading || !input.trim()}
+            >
               <Send size={18} />
             </button>
           </div>
+          <div style={{ textAlign: 'center', fontSize: '10px', color: '#9ca3af', marginTop: '8px' }}>
+            Developed by Shreyansh
+          </div>
         </form>
+
       </div>
     </div>
   );

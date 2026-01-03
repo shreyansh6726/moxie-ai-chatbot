@@ -248,3 +248,36 @@
   .chat-container-wrapper { padding: 0; }
   .chat-card { max-width: 100%; height: 100dvh; border-radius: 0; border: none; }
 }
+
+/* Table Styling for Markdown */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+  font-size: 14px;
+  background: var(--input-wrapper-bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.markdown-content th {
+  background-color: var(--user-bubble-bg);
+  color: white;
+  text-align: left;
+  padding: 10px;
+}
+
+.markdown-content td {
+  padding: 10px;
+  border-bottom: 1px solid var(--bot-bubble-border);
+  color: var(--text-main);
+}
+
+.markdown-content tr:last-child td {
+  border-bottom: none;
+}
+
+/* Fix for horizontal scrolling if table is too wide */
+.markdown-content {
+  overflow-x: auto;
+}
