@@ -281,3 +281,46 @@
 .markdown-content {
   overflow-x: auto;
 }
+
+/* Attachment Button Styling */
+.attach-button {
+  background: none;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.attach-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #4f46e5;
+}
+
+.dark-theme .attach-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #6366f1;
+}
+
+/* Change input to textarea for better multi-line file viewing */
+.input-wrapper textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-main);
+  resize: none;
+  max-height: 150px;
+  font-family: inherit;
+}
+
+/* Ensure the wrapper grows slightly with content */
+.input-wrapper {
+  align-items: flex-end; /* Keeps buttons at the bottom */
+}
