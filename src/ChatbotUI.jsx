@@ -4,12 +4,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import * as pdfjsLib from 'pdfjs-dist'; // Import PDF.js
 import './ChatbotUI.css';
 
-// Custom Component for Code Blocks with Syntax Highlighting & Copy Button
+// Set up the worker for PDF.js (required for it to function)
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 const CodeBlock = ({ language, children, isDarkMode }) => {
   const [copied, setCopied] = useState(false);
-
   const handleCopy = () => {
     const codeText = String(children).replace(/\n$/, '');
     navigator.clipboard.writeText(codeText);
@@ -50,16 +52,13 @@ const ChatbotUI = () => {
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // --- Voice Functions ---
   const speak = (text) => {
     window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[#*`_~]/g, ''); // Clean markdown for speech
+    const cleanText = text.replace(/[#*`_~]/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
-
     const voices = window.speechSynthesis.getVoices();
     utterance.voice = voices.find(v => v.lang.includes('en')) || voices[0];
     window.speechSynthesis.speak(utterance);
@@ -70,35 +69,57 @@ const ChatbotUI = () => {
     setIsSpeaking(false);
   };
 
-  // --- Auto Scroll ---
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
-  // --- File Handling ---
-  const handleFileSelect = (e) => {
+  // --- PDF & TXT Extraction Logic ---
+  const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.type !== "text/plain") {
-      alert("Please upload a .txt file.");
-      return;
-    }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setAttachedFile({
-        name: file.name,
-        content: event.target.result,
-        size: (file.size / 1024).toFixed(1) + " KB"
-      });
+    const fileInfo = {
+      name: file.name,
+      size: (file.size / 1024).toFixed(1) + " KB",
+      type: file.type
     };
-    reader.readAsText(file);
+
+    if (file.type === "text/plain") {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAttachedFile({ ...fileInfo, content: event.target.result });
+      };
+      reader.readAsText(file);
+    } 
+    else if (file.type === "application/pdf") {
+      setIsLoading(true);
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map(item => item.str).join(" ");
+          fullText += pageText + "\n";
+        }
+
+        setAttachedFile({ ...fileInfo, content: fullText });
+      } catch (error) {
+        alert("Error parsing PDF: " + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    } 
+    else {
+      alert("Only .txt and .pdf files are supported.");
+    }
     e.target.value = null;
   };
 
-  // --- Send Message ---
   const handleSend = async (e) => {
     e.preventDefault();
     if ((!input.trim() && !attachedFile) || isLoading) return;
@@ -113,10 +134,9 @@ const ChatbotUI = () => {
     setMessages((prev) => [...prev, userMessage]);
     
     const aiPrompt = attachedFile 
-      ? `[File: ${attachedFile.name}]\nContent:\n${attachedFile.content}\n\nUser Question: ${input}`
+      ? `[User attached a ${attachedFile.type === 'application/pdf' ? 'PDF' : 'TXT'} file: ${attachedFile.name}]\nContent:\n${attachedFile.content}\n\nUser Question: ${input}`
       : input;
 
-    const currentInput = input;
     setInput('');
     setAttachedFile(null);
     setIsLoading(true);
@@ -137,7 +157,7 @@ const ChatbotUI = () => {
       const data = await response.json();
       setMessages((prev) => [...prev, { id: Date.now() + 1, text: data.text, sender: 'bot' }]);
     } catch (error) {
-      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error. Please try again.", sender: 'bot' }]);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, text: "Connection error.", sender: 'bot' }]);
     } finally {
       setIsLoading(false);
     }
@@ -146,8 +166,6 @@ const ChatbotUI = () => {
   return (
     <div className={`chat-container-wrapper ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
       <div className="chat-card">
-        
-        {/* Header */}
         <div className="chat-header">
           <div className="bot-info">
             <div className="bot-avatar"><Bot size={22} /></div>
@@ -172,7 +190,6 @@ const ChatbotUI = () => {
           </div>
         </div>
 
-        {/* Messages */}
         <div ref={scrollRef} className="chat-messages">
           {messages.map((msg) => (
             <div key={msg.id} className={`message-row ${msg.sender}`}>
@@ -219,7 +236,6 @@ const ChatbotUI = () => {
           {isLoading && <div className="message-row bot"><div className="typing-dot"></div></div>}
         </div>
 
-        {/* Input Form */}
         <form onSubmit={handleSend} className="chat-input-form">
           {attachedFile && (
             <div className="file-preview-bar">
@@ -232,7 +248,8 @@ const ChatbotUI = () => {
           )}
 
           <div className="input-wrapper">
-            <input type="file" accept=".txt" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileSelect} />
+            {/* Updated accept attribute to include .pdf */}
+            <input type="file" accept=".txt,.pdf" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileSelect} />
             <button type="button" className="attach-button" onClick={() => fileInputRef.current.click()} disabled={isLoading}>
               <Paperclip size={20} />
             </button>
@@ -240,15 +257,15 @@ const ChatbotUI = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={isLoading ? "Processing file..." : "Type a message..."}
               disabled={isLoading}
             />
             <button type="submit" className="send-button" disabled={isLoading || (!input.trim() && !attachedFile)}>
               <Send size={18} />
             </button>
           </div>
+          <div className="developer-tag">Developed by Shreyansh</div>
         </form>
-
       </div>
     </div>
   );
