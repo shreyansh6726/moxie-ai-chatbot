@@ -56,7 +56,7 @@ src/
 └── index.css             # Global styling & reset
 ```
 
-##Deployment
+## Deployment
 This project is configured for easy deployment on Vercel:
 
 Push your code to a GitHub repository.
