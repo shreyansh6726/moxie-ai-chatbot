@@ -54,8 +54,9 @@ src/
 ├── chat.js               # Groq API integration logic
 ├── App.js                # Main application entry
 └── index.css             # Global styling & reset
+```
 
- Deployment
+## Deployment
 This project is configured for easy deployment on Vercel:
 
 Push your code to a GitHub repository.
@@ -68,4 +69,3 @@ Click Deploy.
 
  License
 This project is open-source and available under the MIT License.
-```
