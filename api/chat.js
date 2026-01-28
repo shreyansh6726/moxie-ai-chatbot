@@ -1,13 +1,12 @@
-import Groq from "groq-sdk";
+const Groq = require('groq-sdk');
 
-const groq = new Groq({ 
-  apiKey: process.env.GROQ_API_KEY 
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
-export default async function handler(req, res) {
-  // 1. Check if the key exists
+module.exports = async function handler(req, res) {
   if (!process.env.GROQ_API_KEY) {
-    return res.status(500).json({ error: "API Key is missing in environment variables" });
+    return res.status(500).json({ error: 'API Key is missing in environment variables' });
   }
 
   if (req.method !== 'POST') {
@@ -15,31 +14,30 @@ export default async function handler(req, res) {
   }
 
   try {
-    let { messages } = req.body;
+    let { messages } = req.body || { messages: [] };
 
-    // Check if there is already a system message; if not, add one to enforce Markdown
-    const hasSystemMessage = messages.some(msg => msg.role === 'system');
-    
+    const hasSystemMessage = Array.isArray(messages) && messages.some(msg => msg.role === 'system');
+
     if (!hasSystemMessage) {
       messages = [
-        { 
-          role: "system", 
-          content: "You are a helpful assistant. You must always respond using Markdown formatting. Use bolding for emphasis, bullet points for lists, and code blocks for any code snippets to ensure high readability." 
+        {
+          role: 'system',
+          content:
+            'You are a helpful assistant. You must always respond using Markdown formatting. Use bolding for emphasis, bullet points for lists, and code blocks for any code snippets to ensure high readability.',
         },
-        ...messages
+        ...messages,
       ];
     }
 
     const completion = await groq.chat.completions.create({
       messages: messages,
-      model: "llama-3.3-70b-versatile",
+      model: 'llama-3.3-70b-versatile',
     });
 
-    const responseText = completion.choices[0]?.message?.content || "No response content";
+    const responseText = (completion && completion.choices && completion.choices[0] && completion.choices[0].message && completion.choices[0].message.content) || 'No response content';
     res.status(200).json({ text: responseText });
-    
   } catch (error) {
-    console.error("Groq API Error Details:", error);
-    res.status(500).json({ error: error.message });
+    console.error('Groq API Error Details:', error);
+    res.status(500).json({ error: error && error.message ? error.message : String(error) });
   }
-}
+};
