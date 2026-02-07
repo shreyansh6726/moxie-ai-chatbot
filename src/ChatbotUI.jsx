@@ -153,7 +153,21 @@ const ChatbotUI = () => {
     window.speechSynthesis.onvoiceschanged = updateVoices;
   }, []);
 
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages]);
+
   const getCleanName = (name) => name.replace(/Microsoft|Google|Apple|Desktop|Natural/g, '').replace(/-/g, '').trim();
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Speech recognition not supported.");
+    const recognition = new SpeechRecognition();
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = (e) => setInput(p => p + e.results[0][0].transcript);
+    recognition.start();
+  };
 
   const speak = (text, voiceIndex = selectedVoiceIndex) => {
     window.speechSynthesis.cancel();
@@ -190,6 +204,8 @@ const ChatbotUI = () => {
         .msg-animate { animation: fadeInSlide 0.4s ease-out forwards; }
         .stop-pulse { animation: stopPulse 2s infinite; }
         @keyframes stopPulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes pulseMic { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .mic-active { animation: pulseMic 1.5s infinite; background: rgba(239, 68, 68, 0.1) !important; }
       `}</style>
 
       <div style={styles.card}>
@@ -275,7 +291,15 @@ const ChatbotUI = () => {
               }
             }} />
             <button type="button" style={{ background: 'transparent', border: 'none', color: theme.textSub, cursor: 'pointer', padding: '8px' }} onClick={() => fileInputRef.current.click()}><Paperclip size={20} /></button>
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} style={styles.textInput} placeholder="Type a message..." />
+            <button 
+              type="button" 
+              className={isListening ? "mic-active" : ""} 
+              style={{ background: 'transparent', border: 'none', color: isListening ? '#ef4444' : theme.textSub, cursor: 'pointer', padding: '8px', borderRadius: '50%' }} 
+              onClick={startListening}
+            >
+              {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+            </button>
+            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} style={styles.textInput} placeholder={isListening ? "Listening..." : "Type a message..."} />
             <button type="submit" style={{ background: '#4f46e5', color: 'white', border: 'none', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} disabled={isLoading}><Send size={18} /></button>
           </div>
         </form>
